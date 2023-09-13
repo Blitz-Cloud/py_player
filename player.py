@@ -7,6 +7,7 @@ import random
 from mutagen.mp3 import MP3
 from pydub import AudioSegment
 from pydub.playback import play
+
 # from pymongo import MongoClient
 
 # host = os.environ["host"]
@@ -25,6 +26,29 @@ class MusicPlayer:
         this.musicPath = musicPath
         this.index = 0
         this.traks = os.listdir(musicPath)
+
+    def __validateInputsFormat(self, array: [str]):
+        regex = r"^\d{1,2}:\d{1,2}_\d+"
+        for i in range(0, len(array)):
+            if not re.match(regex, array[i]):
+                raise Exception(
+                    f"Invalid data set(index:{i+1}) \n{array[i]} \nCan't start the program"
+                )
+
+    def __parseInputToGetTime(self, array: [str]):
+        regex = r"^(\d{1,2}):(\d{1,2})_(\d+)$"
+        for i in range(0, len(array)):
+            match = re.match(regex, pauze[i])
+            pauza = []
+            if match:
+                for match in match.groups():
+                    pauza.append(int(match))
+            else:
+                raise Exception("Unexpected error when parsing")
+            array[i] = pauza
+
+    def __convertToMs(h: int, min: int):
+        return (h * 3600 + min * 60) * 1000
 
     def __str__(this) -> str:
         return this
@@ -51,7 +75,7 @@ class MusicPlayer:
 
     # trebuie adaugat un fade in si un fade out pt melodii
     def Play(this, url, duration):
-        song = AudioSegment.from_file(url,format="mp3")
+        song = AudioSegment.from_file(url, format="mp3")
         audio = song[:duration]
         play(audio)
 
@@ -125,7 +149,7 @@ class MusicPlayer:
             if now[3] == Sh and now[4] == Sm:
                 this.__initPlayer()
             # elif now[3] == Sh and now[4] + 1 == Sm and now[5] == 0:
-                # this.Play(ringPath, 3000)
+            # this.Play(ringPath, 3000)
             # time.sleep(60)
 
 
