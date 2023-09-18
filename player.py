@@ -3,156 +3,168 @@ import sys
 import json
 import math
 import time
+import re
 import random
-from mutagen.mp3 import MP3
 from pydub import AudioSegment
 from pydub.playback import play
 
-# from pymongo import MongoClient
+# Prototip pt structura pauzelor
+# ["7:50_10"]
 
-# host = os.environ["host"]
-# db = os.environ["db"]
+# Date generale despre program
+# acesta primeste ca date de intrare un array de sub forma
+# ["hh:mm_d{m/h}"]
+# unde hh si mm sunt ora plus durata pauzei in ore sau minute
+# iar d este durata pauzei in care trebuie sa se redea muzica
+# Pe langa array ul cu pauze acesta primeste de asemenea si path ul pentru folderul
+# cu muzica
 
 
-scriptPath = os.path.dirname(os.path.abspath(__file__))
-# client = MongoClient(host)
-# db = client[db]
-# pauze = db["site_configs"].find_one()["timeTable"]
+pauze = ["21:20_5m", "21:25_1m"]
 
 
 class MusicPlayer:
-    def __init__(this, jsonData, musicPath: str):
-        this.pauze = jsonData
-        this.musicPath = musicPath
-        this.index = 0
-        this.traks = os.listdir(musicPath)
+    def __init__(self, breaks, musicPath) -> None:
+        self.breaks = breaks
+        self.musicPath = musicPath
+        self.index = 0
+        self.tracks = os.listdir(musicPath)
+        # doar pt debugging se face o copie a array ul inainte de transformarea
+        # in ms
+        self.bkBreaks = self.breaks.copy()
+        self.__parseInputArray()
 
-    def __validateInputsFormat(self, array: [str]):
-        regex = r"^\d{1,2}:\d{1,2}_\d+"
-        for i in range(0, len(array)):
-            if not re.match(regex, array[i]):
-                raise Exception(
-                    f"Invalid data set(index:{i+1}) \n{array[i]} \nCan't start the program"
-                )
-
-    def __parseInputToGetTime(self, array: [str]):
-        regex = r"^(\d{1,2}):(\d{1,2})_(\d+)$"
-        for i in range(0, len(array)):
-            match = re.match(regex, pauze[i])
-            pauza = []
-            if match:
-                for match in match.groups():
-                    pauza.append(int(match))
-            else:
-                raise Exception("Unexpected error when parsing")
-            array[i] = pauza
-
-    def __convertToMs(h: int, min: int):
-        return (h * 3600 + min * 60) * 1000
-
-    def __str__(this) -> str:
-        return this
-
-    # Este folosita atunci cand programul are nevoie de timpul exact de incepere si terminare al pauzelor
-    # va returna ora si minutul de start respectiv de sfarsit al pauzei impreuna cu ora curenta
-    def __getBreaks(this, pauza):
-        now = time.localtime()
-        start, end = pauza.split("_")
-        Sh, Sm = start.split(":")
-        Eh, Em = end.split(":")
-        if int(Em) == 0:
-            Em = "60"
-        return [int(Sh), int(Sm), int(Eh), int(Em), now]
-
-    # Selecteaza o piesa random din nr lor total
-    # sunt necesare inbunatatiri
-    def __randomTrack(this):
-        track = random.choice(this.traks)
-        trackPath = this.musicPath + "/" + track
-        sys.stdout.write(f"{track}\n")
-        sys.stdout.flush()
+    def __randomTrack(self):
+        track = random.choice(self.tracks)
+        trackPath = self.musicPath + "/" + track
+        print(f"{track}\n")
         return trackPath
 
-    # trebuie adaugat un fade in si un fade out pt melodii
     def Play(this, url, duration):
         song = AudioSegment.from_file(url, format="mp3")
         audio = song[:duration]
         play(audio)
 
-    # Poate fi folosita in doua instante
-    # cu o durata prestabilita atunci cand este folosita in interiorul lui sysncTimeline
-    # cu durata default in orice alte cazuri
-    # da Play la melodii random atat timp cat durata nu este 0
-    def __initPlayer(this, duration=0):
-        Sh, Sm, Eh, Em, now = this.__getBreaks(this.pauze[this.index])
-        if not duration:
-            if Sh < Eh and (Em != 60 or Eh - Sh > 1):
-                print("Pauza extra mare initializare normala")
-                duration = ((60 - Sm) + (Eh - Sh - 1) * 60 + Em) * 60000
+    # transforma hh:mm_durata in [hh,mm,durata,h/m],unde hh,mm si durata sunt int
+    def __parseInputArray(self):
+        regex = r"^(\d{1,2}):(\d{1,2})_(\d+)([hm])$"
+        for i in range(0, len(self.breaks)):
+            match = re.match(regex, self.breaks[i])
+            timeData = []
+            if match:
+                for match in match.groups():
+                    if not (match == "h" or match == "m"):
+                        timeData.append(int(match))
+                    else:
+                        timeData.append(match)
             else:
-                duration = (Em - now[4]) * 60000
+                raise Exception(
+                    "Eroare neasteptata atunci cand s-a incercat valitidatea datelor"
+                )
+
+            timeData = self.__convertToMs(
+                timeData[0], timeData[1], timeData[2], timeData[3]
+            )
+            self.breaks[i] = timeData
+
+    # face conversia din [h,min,d?=0] in [ms,ms,d?=0]
+    # unde d?=0 este inclus in array doar daca nu este null
+
+    def __convertToMs(self, h, mins, duration=0, durationFormat=0):
+        h = h * 3600 * 1000
+        mins = mins * 60 * 1000
+        duration = (
+            duration * 3600 * 1000 if durationFormat == "h" else duration * 60 * 1000
+        )
+
+        return (
+            {
+                "h": h,
+                "min": mins,
+                "duration": duration,
+                "startTime": h + mins,
+                "endTime": h + mins + duration,
+            }
+            if duration
+            else {
+                "h": h,
+                "min": mins,
+                "startTime": h + mins,
+            }
+        )
+
+    def initPlayer(self, duration=0):
+        brk = self.breaks[self.index]
+        print(brk)
+        duration = duration
+        if not duration:
+            duration = brk["duration"]
+        print(duration)
         while duration > 0:
-            track = this.__randomTrack()
-            audio = MP3(track)
-            trackLenght = math.floor(audio.info.length) * 1000
-            if trackLenght >= duration:
-                trackLenght = duration
-            this.Play(track, trackLenght)
-            duration -= trackLenght
-        if this.index != len(this.pauze) - 1:
-            print("Marire")
-            this.index += 1
+            track = self.__randomTrack()
+            ext = track.split(".")[-1]
+            audio = AudioSegment.from_file(track, ext)
+            length = len(audio)
+            if length >= duration:
+                length = duration
+            audio = audio[:length]
+            play(audio)
+            duration -= length
+        if self.index != len(self.breaks) - 1:
+            self.index += 1
+            print("Se trece la urmatoarea pauza")
         else:
-            print("Resetare")
-            this.index = 0
+            self.index = 0
+            print("Se trece la prima pauza")
+        # marirea / resetare de index
 
-    # In baza vectorului functia detecteaza care este urmatoarea pauza
-    # in functie de ora curenta
-    # Iar in cazul in care programul este pornit in timpul unei pauze acesta va chema __initPlayer pt restul de pauza
-    # necesita inbunatatiri pt a putea calcula si secundele
-    def __syncTimeline(this) -> int:
-        # print("Sync")
-        for i in range(0, len(this.pauze)):
-            Sh, Sm, Eh, Em, now = this.__getBreaks(this.pauze[i])
-            if now[3] == Sh:
-                if now[4] < Sm:
-                    this.index = i
-                elif now[4] >= Sm and now[4] < Em and Sh == Eh:
-                    print("Suntem in pauza")
-                    duration = (Em - now[4]) * 60000
-                    this.__initPlayer(duration)
-                elif now[4] >= Sm and Sh < Eh:
-                    print("Pauza extra mare")
-                    duration = ((60 - now[4]) + (Eh - now[3] - 1) * 60 + Em) * 60000
-                    this.__initPlayer(duration)
-                elif now[4] > Em:
-                    print("Mai este pana la pauze")
-                    this.index = i + 1
-            now = time.localtime()
-            if now[3] >= Sh and now[4] >= Em:
-                # resetare
-                this.index = 0
+    # se ocupa de selectia intervalului potrivit din array ul cu pauze
+    # este important deoarece in cazul in care acesta este pornit mai tarziu decat,
+    # acesta sa determine pauza portrivita in care sa redea muzica
+    def __syncTimeline(self):
+        print("Se alege pauza din in care trebuie sa se redea muzica...")
+        curentTime = time.localtime()
+        now = self.__convertToMs(curentTime.tm_hour, curentTime.tm_min)
+        for i in range(0, len(self.breaks)):
+            brk = self.breaks[i]
 
-    # Verifica in fiecare minut daca este momentul in care sa dea drumul la muzica
-    # Necesita inbunatatiri pt a da un semnal sonor pt sfarsitul de ora
-    def start(this):
-        sys.stdout.write("Player started \n")
-        sys.stdout.flush()
+            # trebuie sa fie verificate doua cazuri
+            # daca este inainte de pauza
+            # daca este in timpul unei pauze
+            if now["h"] == brk["h"]:
+                if now["min"] < brk["min"]:
+                    self.index = i
+                    print(f"Pauza selectata este {self.bkBreaks[i]}")
+                elif (
+                    now["startTime"] >= brk["startTime"]
+                    and now["startTime"] < brk["endTime"]
+                ):
+                    duration = brk["endTime"] - now["startTime"]
+                    bkDuration = duration / (60 * 1000)
+                    print(
+                        f"Suntem in pauza se v a reda muzica pentru un interval de {bkDuration} min"
+                    )
+                    self.initPlayer(duration)
+                else:
+                    # in cazul in care pauza deja a trecut se va selecta urmatoarea pauza din lista
+                    self.index = i + 1
+                    print(f"Pauza selectata este {self.bkBreaks[i+1]}")
+
+    def start(self):
+        print("S a pornit playerul")
         now = time.localtime()
-        # ringPath = os.path.join(this.musicPath, "..", "ring/ring.wav")
-        # timeout = 60 - now[5]
-        # time.sleep(timeout)
-        this.__syncTimeline()
+        timeout = 60 - now[5]
+        time.sleep(timeout)
+        self.__syncTimeline()
         while True:
-            now = time.localtime()
-            Sh, Sm, Eh, Em, now = this.__getBreaks(this.pauze[this.index])
-            if now[3] == Sh and now[4] == Sm:
-                this.__initPlayer()
-            # elif now[3] == Sh and now[4] + 1 == Sm and now[5] == 0:
-            # this.Play(ringPath, 3000)
-            # time.sleep(60)
+            locaTime = time.localtime()
+            now = self.__convertToMs(locaTime.tm_hour, locaTime.tm_min)
+
+            brk = self.breaks[self.index]
+            if brk["startTime"] == now["startTime"]:
+                self.initPlayer()
+            time.sleep(60)
 
 
-print(scriptPath)
-player = MusicPlayer(["21:24_21:25"], os.path.join(scriptPath, "music"))
+player = MusicPlayer(pauze, "C:\\Users\\Tudor-Pricop Ionut\\Project\\py_player\music")
 player.start()
