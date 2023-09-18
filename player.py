@@ -29,16 +29,21 @@ class MusicPlayer:
         self.musicPath = musicPath
         self.index = 0
         self.tracks = os.listdir(musicPath)
+        self.bkTracks = self.tracks.copy()
         # doar pt debugging se face o copie a array ul inainte de transformarea
         # in ms
         self.bkBreaks = self.breaks.copy()
         self.__parseInputArray()
 
     def __randomTrack(self):
-        track = random.choice(self.tracks)
-        trackPath = self.musicPath + "/" + track
-        print(f"{track}\n")
-        return trackPath
+        if len(self.tracks):
+            track = random.choice(self.tracks)
+            trackPath = self.musicPath + "/" + track
+            print(f"{track}\n")
+            self.tracks.pop(self.index(track))
+            return trackPath
+        else:
+            self.tracks = self.bkBreaks.copy()
 
     def Play(this, url, duration):
         song = AudioSegment.from_file(url, format="mp3")
