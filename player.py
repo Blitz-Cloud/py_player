@@ -20,9 +20,6 @@ from pydub import playback
 # cu muzica
 
 
-pauze = ["6:23_1m", "21:25_1m"]
-
-
 class MusicPlayer:
     def __init__(self, breaks, musicPath) -> None:
         self.breaks = breaks
@@ -108,11 +105,11 @@ class MusicPlayer:
                 length = duration
             audio = audio[:length]
             playback.play(audio)
-
             duration -= length
         if self.index != len(self.breaks) - 1:
             self.index += 1
             print("Se trece la urmatoarea pauza")
+            print(self.bkBreaks[self.index])
         else:
             self.index = 0
             print("Se trece la prima pauza")
@@ -125,9 +122,9 @@ class MusicPlayer:
         print("Se alege pauza din in care trebuie sa se redea muzica...")
         curentTime = time.localtime()
         now = self.__convertToMs(curentTime.tm_hour, curentTime.tm_min)
+        ok = True
         for i in range(0, len(self.breaks)):
             brk = self.breaks[i]
-
             # trebuie sa fie verificate doua cazuri
             # daca este inainte de pauza
             # daca este in timpul unei pauze
@@ -144,7 +141,9 @@ class MusicPlayer:
                     print(
                         f"Suntem in pauza se v a reda muzica pentru un interval de {bkDuration} min"
                     )
+
                     self.initPlayer(duration)
+
                 else:
                     # in cazul in care pauza deja a trecut se va selecta urmatoarea pauza din lista
                     self.index = i + 1
@@ -164,7 +163,3 @@ class MusicPlayer:
             if brk["startTime"] == now["startTime"]:
                 self.initPlayer()
             time.sleep(60)
-
-
-player = MusicPlayer(pauze, "C:\\Users\\Tudor-Pricop Ionut\\Project\\py_player\music")
-player.start()
