@@ -6,7 +6,7 @@ import time
 import re
 import random
 from pydub import AudioSegment
-from pydub.playback import play
+from pydub import playback
 
 # Prototip pt structura pauzelor
 # ["7:50_10"]
@@ -20,7 +20,7 @@ from pydub.playback import play
 # cu muzica
 
 
-pauze = ["21:20_5m", "21:25_1m"]
+pauze = ["6:23_1m", "21:25_1m"]
 
 
 class MusicPlayer:
@@ -36,19 +36,13 @@ class MusicPlayer:
         self.__parseInputArray()
 
     def __randomTrack(self):
-        if len(self.tracks):
-            track = random.choice(self.tracks)
-            trackPath = self.musicPath + "/" + track
-            print(f"{track}\n")
-            self.tracks.pop(self.index(track))
-            return trackPath
-        else:
-            self.tracks = self.bkBreaks.copy()
-
-    def Play(this, url, duration):
-        song = AudioSegment.from_file(url, format="mp3")
-        audio = song[:duration]
-        play(audio)
+        if not len(self.tracks):
+            self.tracks = self.bkTracks.copy()
+        track = random.choice(self.tracks)
+        trackPath = self.musicPath + "/" + track
+        print(f"{track}\n")
+        self.tracks.pop(self.tracks.index(track))
+        return trackPath
 
     # transforma hh:mm_durata in [hh,mm,durata,h/m],unde hh,mm si durata sunt int
     def __parseInputArray(self):
@@ -100,11 +94,11 @@ class MusicPlayer:
 
     def initPlayer(self, duration=0):
         brk = self.breaks[self.index]
-        print(brk)
+
         duration = duration
         if not duration:
             duration = brk["duration"]
-        print(duration)
+
         while duration > 0:
             track = self.__randomTrack()
             ext = track.split(".")[-1]
@@ -113,7 +107,8 @@ class MusicPlayer:
             if length >= duration:
                 length = duration
             audio = audio[:length]
-            play(audio)
+            playback.play(audio)
+
             duration -= length
         if self.index != len(self.breaks) - 1:
             self.index += 1
