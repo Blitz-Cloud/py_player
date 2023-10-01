@@ -160,6 +160,6 @@ class MusicPlayer:
             now = self.__convertToMs(locaTime.tm_hour, locaTime.tm_min)
 
             brk = self.breaks[self.index]
-            if brk["startTime"] == now["startTime"]:
+            if brk["startTime"] == now["startTime"] and (now["tm_wday"]>=0 and now["tm_wday"]<=4):
                 self.initPlayer()
             time.sleep(60)
