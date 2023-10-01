@@ -94,6 +94,7 @@ class MusicPlayer:
 
         duration = duration
         if not duration:
+            print(f"Playerul a fost pornit pentru o perioada de {duration}")
             duration = brk["duration"]
 
         while duration > 0:
@@ -108,11 +109,10 @@ class MusicPlayer:
             duration -= length
         if self.index != len(self.breaks) - 1:
             self.index += 1
-            print("Se trece la urmatoarea pauza")
-            print(self.bkBreaks[self.index])
+            print(f"Se trece la urmatoarea pauza:{self.bkBreaks[self.index]}")
         else:
             self.index = 0
-            print("Se trece la prima pauza")
+            print(f"Se trece la prima pauza:{self.bkBreaks[self.index]}")
         # marirea / resetare de index
 
     # se ocupa de selectia intervalului potrivit din array ul cu pauze
@@ -139,7 +139,7 @@ class MusicPlayer:
                     duration = brk["endTime"] - now["startTime"]
                     bkDuration = duration / (60 * 1000)
                     print(
-                        f"Suntem in pauza se v a reda muzica pentru un interval de {bkDuration} min"
+                        f"Suntem in pauza:{self.bkBreaks[i]}\nSe v a reda muzica pentru un interval de {bkDuration} min"
                     )
 
                     self.initPlayer(duration)
@@ -153,6 +153,7 @@ class MusicPlayer:
         print("S a pornit playerul")
         now = time.localtime()
         timeout = 60 - now[5]
+        print(f"Se asteapta {timeout}")
         time.sleep(timeout)
         self.__syncTimeline()
         while True:
