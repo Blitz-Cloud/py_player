@@ -94,8 +94,10 @@ class MusicPlayer:
 
         duration = duration
         if not duration:
-            print(f"Playerul a fost pornit pentru o perioada de {duration}")
             duration = brk["duration"]
+
+        bkDuration = duration / (60 * 1000)
+        print(f"Playerul a fost pornit pentru o perioada de {bkDuration}")
 
         while duration > 0:
             track = self.__randomTrack()
