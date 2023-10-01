@@ -1,4 +1,3 @@
 *.mp3
 .vscode
-*.old.*
-*.test.*
+__pychache__
