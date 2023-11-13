@@ -158,6 +158,14 @@ class MusicPlayer:
                     self.index = i + 1
                     print(f"Pauza selectata este {self.bkBreaks[i+1]}")
 
+    def ringBell(self):
+        audio = AudioSegment.from_file("./bell.mp3","mp3")
+        audio = audio[:3000]
+        # mareste volumul cu 6 dB
+        audio = audio +15
+        playback.play(audio)
+        time.sleep(1)
+
     def start(self):
         print("S a pornit playerul")
         now = time.localtime()
@@ -174,5 +182,8 @@ class MusicPlayer:
             
             brk = self.breaks[self.index]
             if brk["startTime"] == now["startTime"] and (localTime.tm_wday>=0 and localTime.tm_wday<=4):
+                for i in range(0,3):
+                    self.ringBell()
+                    print(i)
                 self.initPlayer()               
             # time.sleep(60)
