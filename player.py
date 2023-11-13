@@ -31,6 +31,7 @@ class MusicPlayer:
         # in ms
         self.bkBreaks = self.breaks.copy()
         self.__parseInputArray()
+        
 
     def __randomTrack(self):
         if not len(self.tracks):
@@ -89,6 +90,7 @@ class MusicPlayer:
             }
         )
 
+    # se ocumpa de alegerea melodiei care trebuie redate si de redarea propriu zisa
     def initPlayer(self, duration=0):
         brk = self.breaks[self.index]
 
@@ -100,12 +102,17 @@ class MusicPlayer:
         print(f"Playerul a fost pornit pentru o perioada de {bkDuration}")
 
         while duration > 0:
+            # selectarea fisierului audio, memorarea extensiei, a lungimei.
             track = self.__randomTrack()
             ext = track.split(".")[-1]
+
+            # 
             audio = AudioSegment.from_file(track, ext)
+
             length = len(audio)
             if length >= duration:
                 length = duration
+            
             audio = audio[:length]
             playback.play(audio)
             duration -= length
@@ -154,15 +161,18 @@ class MusicPlayer:
     def start(self):
         print("S a pornit playerul")
         now = time.localtime()
-        timeout = 60 - now[5]
-        print(f"Se asteapta {timeout}")
-        time.sleep(timeout)
-        self.__syncTimeline()
+        # timeout = 60 - now[5]
+        # print(f"Se asteapta {timeout}")
+        # time.sleep(timeout)
+        if(now.tm_wday>=0 and now.tm_wday<=4):
+            self.__syncTimeline()
+        
+        
         while True:
-            locaTime = time.localtime()
-            now = self.__convertToMs(locaTime.tm_hour, locaTime.tm_min)
-
+            localTime = time.localtime()
+            now = self.__convertToMs(localTime.tm_hour, localTime.tm_min)
+            
             brk = self.breaks[self.index]
-            if brk["startTime"] == now["startTime"] and (now["tm_wday"]>=0 and now["tm_wday"]<=4):
-                self.initPlayer()
-            time.sleep(60)
+            if brk["startTime"] == now["startTime"] and (localTime.tm_wday>=0 and localTime.tm_wday<=4):
+                self.initPlayer()               
+            # time.sleep(60)
