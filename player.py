@@ -169,11 +169,13 @@ class MusicPlayer:
     def start(self):
         print("S a pornit playerul")
         now = time.localtime()
-        # timeout = 60 - now[5]
-        # print(f"Se asteapta {timeout}")
-        # time.sleep(timeout)
+        timeout = 60 - now[5]
+        print(f"Se asteapta {timeout}")
+        time.sleep(timeout)
         if(now.tm_wday>=0 and now.tm_wday<=4):
             self.__syncTimeline()
+            for i in range(0,3):
+                    self.ringBell()
         
         
         while True:
@@ -184,6 +186,7 @@ class MusicPlayer:
             if brk["startTime"] == now["startTime"] and (localTime.tm_wday>=0 and localTime.tm_wday<=4):
                 for i in range(0,3):
                     self.ringBell()
-                    print(i)
-                self.initPlayer()               
-            # time.sleep(60)
+                self.initPlayer() 
+                for i in range(0,3):
+                    self.ringBell()
+            time.sleep(60)
