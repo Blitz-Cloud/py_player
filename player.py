@@ -31,7 +31,6 @@ class MusicPlayer:
         # in ms
         self.bkBreaks = self.breaks.copy()
         self.__parseInputArray()
-        
 
     def __randomTrack(self):
         if not len(self.tracks):
@@ -106,13 +105,13 @@ class MusicPlayer:
             track = self.__randomTrack()
             ext = track.split(".")[-1]
 
-            # 
+            #
             audio = AudioSegment.from_file(track, ext)
 
             length = len(audio)
             if length >= duration:
                 length = duration
-            
+
             audio = audio[:length]
             playback.play(audio)
             duration -= length
@@ -159,10 +158,11 @@ class MusicPlayer:
                     print(f"Pauza selectata este {self.bkBreaks[i+1]}")
 
     def ringBell(self):
-        audio = AudioSegment.from_file("./bell.mp3","mp3")
+        pass
+        audio = AudioSegment.from_file("./bell.mp3", "mp3")
         audio = audio[:3000]
         # mareste volumul cu 6 dB
-        audio = audio +15
+        audio = audio + 15
         playback.play(audio)
         time.sleep(1)
 
@@ -172,21 +172,22 @@ class MusicPlayer:
         timeout = 60 - now[5]
         print(f"Se asteapta {timeout}")
         time.sleep(timeout)
-        if(now.tm_wday>=0 and now.tm_wday<=4):
+        if now.tm_wday >= 0 and now.tm_wday <= 4:
             self.__syncTimeline()
-            for i in range(0,3):
-                    self.ringBell()
-        
-        
+            for i in range(0, 3):
+                self.ringBell()
+
         while True:
             localTime = time.localtime()
             now = self.__convertToMs(localTime.tm_hour, localTime.tm_min)
-            
+
             brk = self.breaks[self.index]
-            if brk["startTime"] == now["startTime"] and (localTime.tm_wday>=0 and localTime.tm_wday<=4):
-                for i in range(0,3):
+            if brk["startTime"] == now["startTime"] and (
+                localTime.tm_wday >= 0 and localTime.tm_wday <= 4
+            ):
+                for i in range(0, 3):
                     self.ringBell()
-                self.initPlayer() 
-                for i in range(0,3):
+                self.initPlayer()
+                for i in range(0, 3):
                     self.ringBell()
             time.sleep(60)
