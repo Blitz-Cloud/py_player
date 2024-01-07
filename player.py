@@ -187,7 +187,10 @@ class MusicPlayer:
             ):
                 for i in range(0, 3):
                     self.ringBell()
-                self.initPlayer()
-                for i in range(0, 3):
-                    self.ringBell()
+                # verifica ca pauza sa nu fie inceput sau sfarsit de program
+                if self.breaks[self.index]:
+                    self.initPlayer()
+                    for i in range(0, 3):
+                        self.ringBell()
+
             time.sleep(60)
