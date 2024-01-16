@@ -151,6 +151,7 @@ class MusicPlayer:
                     )
 
                     self.initPlayer(duration)
+                    self.index = i+1
 
                 else:
                     # in cazul in care pauza deja a trecut se va selecta urmatoarea pauza din lista
